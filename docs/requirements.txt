@@ -1,0 +1,9 @@
+schedule
+watchdog
+pyyaml
+colorama
+rich
+psutil
+google-generativeai
+python-dotenv
+tweepy

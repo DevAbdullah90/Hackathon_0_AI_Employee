@@ -1,0 +1,21 @@
+{
+  "week_start": "2026-02-07",
+  "week_end": "2026-02-14",
+  "posts_published": 5,
+  "total_engagement": {
+    "likes": 403,
+    "comments": 25,
+    "shares": 32,
+    "views": 1209
+  },
+  "new_connections": 25,
+  "qualified_leads": 6,
+  "engagement_rate": 3.67,
+  "top_performing_post": "Success story about client achievement",
+  "sales_opportunities": 3,
+  "recommendations": [
+    "Post more educational content - engagement rate was 5.970258773716236%",
+    "Focus on industry trends - these posts performed 25% better",
+    "Increase posting frequency during peak hours (9-11 AM)"
+  ]
+}

@@ -1,0 +1,1861 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Employee Dashboard - Enterprise Edition</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --light-bg: #ecf0f1;
+            --dark-bg: #2c3e50;
+            --sidebar-width: 250px;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: var(--primary-color);
+            color: white;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.7);
+            padding: 12px 20px;
+            margin: 5px 15px;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: white;
+            background: rgba(255,255,255,0.1);
+        }
+
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .header {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card {
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: none;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .pipeline-section {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding: 15px 0;
+            scrollbar-width: thin;
+        }
+
+        .pipeline-column {
+            min-width: 200px;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .activity-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .activity-item:hover {
+            background: #f8f9fa;
+        }
+
+        .chat-container {
+            height: 400px;
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .message {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 70%;
+        }
+
+        .message.sent {
+            background: #e3f2fd;
+            margin-left: auto;
+        }
+
+        .message.received {
+            background: #f1f8e9;
+            margin-right: auto;
+        }
+
+        .social-post {
+            border: 1px solid #eee;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .approval-item {
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+        }
+
+        .log-entry {
+            padding: 8px 12px;
+            border-bottom: 1px solid #eee;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .command-input {
+            border: 2px solid var(--secondary-color);
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+        }
+
+        .theme-toggle {
+            cursor: pointer;
+        }
+
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 70px;
+            }
+            .sidebar .nav-text {
+                display: none;
+            }
+            .main-content {
+                margin-left: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-robot"></i> <span class="nav-text">AI Employee</span></h4>
+            <small class="text-muted nav-text">Enterprise Dashboard</small>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-link active" data-page="dashboard">
+                <i class="fas fa-tachometer-alt me-2"></i>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="#" class="nav-link" data-page="email">
+                <i class="fas fa-envelope me-2"></i>
+                <span class="nav-text">Email Manager</span>
+            </a>
+            <a href="#" class="nav-link" data-page="whatsapp">
+                <i class="fab fa-whatsapp me-2"></i>
+                <span class="nav-text">WhatsApp Hub</span>
+            </a>
+            <a href="#" class="nav-link" data-page="social">
+                <i class="fas fa-hashtag me-2"></i>
+                <span class="nav-text">Social Media</span>
+            </a>
+            <a href="#" class="nav-link" data-page="approvals">
+                <i class="fas fa-check-circle me-2"></i>
+                <span class="nav-text">Approvals</span>
+            </a>
+            <a href="#" class="nav-link" data-page="logs">
+                <i class="fas fa-file-alt me-2"></i>
+                <span class="nav-text">System Logs</span>
+            </a>
+            <a href="#" class="nav-link" data-page="commands">
+                <i class="fas fa-terminal me-2"></i>
+                <span class="nav-text">Command Center</span>
+            </a>
+            <a href="#" class="nav-link" data-page="settings">
+                <i class="fas fa-cog me-2"></i>
+                <span class="nav-text">Settings</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Header -->
+        <div class="header">
+            <h2>AI Employee Dashboard</h2>
+            <div>
+                <button class="btn btn-outline-secondary btn-sm me-2 theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <button class="btn btn-primary btn-sm" id="refreshBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Page -->
+        <div id="dashboard" class="page-section active">
+            <!-- Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="stat-value" id="filesProcessed">0</div>
+                        <div class="stat-label">Files Processed</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="stat-value" id="emailsSent">0</div>
+                        <div class="stat-label">Emails Sent</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="stat-value" id="pendingApprovals">0</div>
+                        <div class="stat-label">Pending Approvals</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card stat-card">
+                        <div class="stat-value" id="systemHealth">98%</div>
+                        <div class="stat-label">System Health</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- File Processing Pipeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-exchange-alt me-2"></i>File Processing Pipeline</h5>
+                </div>
+                <div class="card-body">
+                    <div class="pipeline-section" id="pipelineContainer">
+                        <!-- Pipeline columns will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="row mt-4">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-history me-2"></i>Recent Activity</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="recentActivity">
+                                <!-- Activity items will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-line me-2"></i>System Status</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="systemChart" width="400" height="200"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Manager Page -->
+        <div id="email" class="page-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-envelope me-2"></i>Email Manager</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="list-group" id="emailList">
+                                <!-- Email list will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div id="emailViewer">
+                                <div class="alert alert-info">Select an email to view details</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp Hub Page -->
+        <div id="whatsapp" class="page-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fab fa-whatsapp me-2"></i>WhatsApp Hub</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="list-group" id="whatsappContacts">
+                                <!-- Contacts will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div id="whatsappChat">
+                                <div class="chat-container" id="chatMessages">
+                                    <!-- Messages will be populated by JavaScript -->
+                                </div>
+                                <div class="input-group mt-3">
+                                    <input type="text" class="form-control" placeholder="Type a message..." id="whatsappMessage">
+                                    <button class="btn btn-success" id="sendWhatsappMessage">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Social Media Hub Page -->
+        <div id="social" class="page-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-hashtag me-2"></i>Social Media Hub</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center bg-primary text-white">
+                                <div class="card-body">
+                                    <i class="fab fa-linkedin fa-2x mb-2"></i>
+                                    <h6>LinkedIn</h6>
+                                    <p class="mb-0" id="linkedinStats">0 posts</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-info text-white">
+                                <div class="card-body">
+                                    <i class="fab fa-twitter fa-2x mb-2"></i>
+                                    <h6>Twitter</h6>
+                                    <p class="mb-0" id="twitterStats">0 tweets</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-danger text-white">
+                                <div class="card-body">
+                                    <i class="fab fa-instagram fa-2x mb-2"></i>
+                                    <h6>Instagram</h6>
+                                    <p class="mb-0" id="instagramStats">0 posts</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center bg-warning text-dark">
+                                <div class="card-body">
+                                    <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                    <h6>Total Engagement</h6>
+                                    <p class="mb-0" id="totalEngagement">0</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6>Post Composer</h6>
+                                </div>
+                                <div class="card-body">
+                                    <textarea class="form-control mb-3" rows="4" placeholder="Write your social media post..." id="socialPostContent"></textarea>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="postToLinkedIn">
+                                        <label class="form-check-label" for="postToLinkedIn">LinkedIn</label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="postToTwitter">
+                                        <label class="form-check-label" for="postToTwitter">Twitter</label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="postToInstagram">
+                                        <label class="form-check-label" for="postToInstagram">Instagram</label>
+                                    </div>
+                                    <button class="btn btn-primary" id="schedulePost">
+                                        <i class="fas fa-calendar-plus me-2"></i>Schedule Post
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6>Recent Posts</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div id="recentPosts">
+                                        <!-- Posts will be populated by JavaScript -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approvals Page -->
+        <div id="approvals" class="page-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-check-circle me-2"></i>Approval Center</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Request</th>
+                                    <th>Amount</th>
+                                    <th>Requested By</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="approvalsTable">
+                                <!-- Approval items will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Logs Page -->
+        <div id="logs" class="page-section">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5><i class="fas fa-file-alt me-2"></i>System Logs</h5>
+                    <div>
+                        <select class="form-select form-select-sm d-inline-block w-auto me-2" id="logLevelFilter">
+                            <option value="all">All Levels</option>
+                            <option value="info">Info</option>
+                            <option value="warning">Warning</option>
+                            <option value="error">Error</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-secondary" id="downloadLogs">
+                            <i class="fas fa-download me-1"></i>Download
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="log-container" style="height: 500px; overflow-y: auto;">
+                        <div id="logEntries">
+                            <!-- Log entries will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Command Center Page -->
+        <div id="commands" class="page-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-terminal me-2"></i>Command Center</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6>Quick Commands</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <button class="btn btn-primary" data-command="start-all">
+                                            <i class="fas fa-play me-2"></i>Start All Services
+                                        </button>
+                                        <button class="btn btn-warning" data-command="stop-all">
+                                            <i class="fas fa-stop me-2"></i>Stop All Services
+                                        </button>
+                                        <button class="btn btn-info" data-command="check-status">
+                                            <i class="fas fa-heartbeat me-2"></i>Check System Status
+                                        </button>
+                                        <button class="btn btn-secondary" data-command="backup-system">
+                                            <i class="fas fa-database me-2"></i>Create Backup
+                                        </button>
+                                        <button class="btn btn-success" data-command="restart-services">
+                                            <i class="fas fa-redo me-2"></i>Restart Services
+                                        </button>
+                                        <button class="btn btn-danger" data-command="run-diagnostic">
+                                            <i class="fas fa-stethoscope me-2"></i>Run Diagnostic
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <h6>Manual Command</h6>
+                                    <div>
+                                        <button class="btn btn-sm btn-outline-secondary" id="clearCommandHistory">
+                                            <i class="fas fa-trash me-1"></i>Clear History
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="input-group mb-3">
+                                        <span class="input-group-text"><i class="fas fa-dollar-sign"></i></span>
+                                        <input type="text" class="form-control command-input" placeholder="Enter command..." id="manualCommand">
+                                        <button class="btn btn-primary" id="executeCommand">
+                                            <i class="fas fa-bolt me-2"></i>Execute
+                                        </button>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Command History</label>
+                                        <select class="form-select" id="commandHistory">
+                                            <option value="">Select a previous command...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-text">
+                                        Available commands: start-all, stop-all, check-status, backup-system, restart-services, run-diagnostic
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6>Command Output</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="bg-dark text-light p-3 rounded" style="height: 300px; overflow-y: auto;" id="commandOutput">
+                                        <div class="text-muted">Ready to execute commands...</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6>Available Commands</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group">
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <code>start-all</code>
+                                            <span class="badge bg-primary">Start</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <code>stop-all</code>
+                                            <span class="badge bg-warning">Stop</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <code>check-status</code>
+                                            <span class="badge bg-info">Status</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <code>backup-system</code>
+                                            <span class="badge bg-secondary">Backup</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <code>restart-services</code>
+                                            <span class="badge bg-success">Restart</span>
+                                        </li>
+                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                            <code>run-diagnostic</code>
+                                            <span class="badge bg-danger">Diagnostic</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Page -->
+        <div id="settings" class="page-section">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-cog me-2"></i>Settings</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6>Appearance</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Theme</label>
+                                        <select class="form-select" id="themeSelector">
+                                            <option value="light">Light Theme</option>
+                                            <option value="dark">Dark Theme</option>
+                                            <option value="auto">Auto (System)</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Dashboard Layout</label>
+                                        <select class="form-select" id="layoutSelector">
+                                            <option value="compact">Compact</option>
+                                            <option value="spacious">Spacious</option>
+                                            <option value="minimal">Minimal</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="realTimeUpdates">
+                                        <label class="form-check-label" for="realTimeUpdates">
+                                            Enable Real-time Updates
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6>Notifications</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                                        <label class="form-check-label" for="emailNotifications">
+                                            Email Notifications
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="whatsappNotifications" checked>
+                                        <label class="form-check-label" for="whatsappNotifications">
+                                            WhatsApp Notifications
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="socialNotifications" checked>
+                                        <label class="form-check-label" for="socialNotifications">
+                                            Social Media Notifications
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="systemNotifications" checked>
+                                        <label class="form-check-label" for="systemNotifications">
+                                            System Notifications
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h6>Integrations</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Email Service</label>
+                                        <select class="form-select" id="emailService">
+                                            <option value="gmail">Gmail</option>
+                                            <option value="outlook">Outlook</option>
+                                            <option value="custom">Custom SMTP</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">WhatsApp Business API</label>
+                                        <input type="text" class="form-control" id="whatsappApi" placeholder="API Key">
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Social Media APIs</label>
+                                        <input type="text" class="form-control" id="socialMediaApis" placeholder="API Keys (comma separated)">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h6>Security</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Session Timeout (minutes)</label>
+                                        <input type="number" class="form-control" id="sessionTimeout" value="30" min="5" max="120">
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <input class="form-check-input" type="checkbox" id="twoFactorAuth">
+                                        <label class="form-check-label" for="twoFactorAuth">
+                                            Enable Two-Factor Authentication
+                                        </label>
+                                    </div>
+
+                                    <button class="btn btn-danger" id="saveSettings">
+                                        <i class="fas fa-save me-2"></i>Save Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global state
+        let systemState = {
+            filesProcessed: 0,
+            emailsSent: 0,
+            pendingApprovals: 0,
+            systemHealth: 98,
+            services: {
+                emailWatcher: 'online',
+                whatsappWatcher: 'online',
+                autoProcessor: 'online',
+                smartScheduler: 'online'
+            },
+            recentActivity: [],
+            filePipeline: {
+                inbox: 12,
+                needsAction: 8,
+                pendingApproval: 5,
+                approved: 3,
+                done: 24
+            },
+            emails: [],
+            whatsappContacts: [],
+            whatsappMessages: {},
+            socialStats: {},
+            approvals: []
+        };
+
+        // DOM Elements
+        const themeToggle = document.getElementById('themeToggle');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const navLinks = document.querySelectorAll('.nav-link[data-page]');
+        const pageSections = document.querySelectorAll('.page-section');
+        const themeSelector = document.getElementById('themeSelector');
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadInitialData();
+            setupEventListeners();
+            initializeCharts();
+            setActivePage('dashboard');
+
+            // Load saved settings
+            loadSavedSettings();
+
+            // Initialize WebSocket connection
+            initWebSocket();
+
+            // Start periodic updates
+            window.updateInterval = setInterval(updateDashboard, 5000);
+        });
+
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}`;
+
+            try {
+                window.ws = new WebSocket(wsUrl);
+
+                window.ws.onopen = function(event) {
+                    console.log('Connected to WebSocket server');
+                    addNotification('Connected to system', 'success');
+                };
+
+                window.ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleWebSocketMessage(data);
+                    } catch (error) {
+                        console.error('Error parsing WebSocket message:', error);
+                    }
+                };
+
+                window.ws.onclose = function(event) {
+                    console.log('Disconnected from WebSocket server');
+                    addNotification('Disconnected from system', 'warning');
+
+                    // Attempt to reconnect after 5 seconds
+                    setTimeout(initWebSocket, 5000);
+                };
+
+                window.ws.onerror = function(error) {
+                    console.error('WebSocket error:', error);
+                    addNotification('WebSocket connection error', 'danger');
+                };
+            } catch (error) {
+                console.error('Error initializing WebSocket:', error);
+                addNotification('Failed to connect to system', 'danger');
+            }
+        }
+
+        // Handle incoming WebSocket messages
+        function handleWebSocketMessage(data) {
+            switch(data.type) {
+                case 'system_update':
+                    systemState = {...systemState, ...data.data};
+                    updateDashboard();
+                    break;
+
+                case 'log_entry':
+                    // Add new log entry to the top of the logs list if on logs page
+                    if (document.getElementById('logs').classList.contains('active')) {
+                        prependLogEntry(data.data);
+                    }
+                    break;
+
+                case 'file_change':
+                    addNotification(`File change: ${data.data.event} - ${data.data.filePath}`, 'info');
+                    break;
+
+                case 'activity_update':
+                    systemState.recentActivity.unshift(data.data);
+                    if (systemState.recentActivity.length > 10) {
+                        systemState.recentActivity = systemState.recentActivity.slice(0, 10);
+                    }
+                    renderRecentActivity();
+                    break;
+
+                case 'initial_state':
+                    systemState = {...systemState, ...data.data};
+                    updateDashboard();
+                    break;
+
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+
+        // Prepend a new log entry to the logs display
+        function prependLogEntry(log) {
+            const container = document.getElementById('logEntries');
+            const logElement = document.createElement('div');
+            logElement.className = 'log-entry';
+            logElement.innerHTML = `
+                <span class="text-muted">${formatDateTime(log.timestamp)}</span>
+                <span class="badge bg-${getLogLevelClass(log.level)} ms-2">${log.level}</span>
+                <span class="ms-2">${log.message}</span>
+                <small class="text-muted ms-2">[${log.source}]</small>
+            `;
+
+            // Add to the top of the container
+            if (container.firstChild) {
+                container.insertBefore(logElement, container.firstChild);
+            } else {
+                container.appendChild(logElement);
+            }
+
+            // Auto-scroll to the new entry if at the top
+            if (container.scrollTop < 100) {
+                container.scrollTop = 0;
+            }
+        }
+
+        // Add notification to the UI
+        function addNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+            notification.style.right = '20px';
+            notification.style.top = '20px';
+            notification.style.zIndex = '9999';
+            notification.style.minWidth = '300px';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Load initial data from API
+        async function loadInitialData() {
+            try {
+                // Load system status
+                const statusResponse = await fetch('/api/status');
+                if (statusResponse.ok) {
+                    systemState = await statusResponse.json();
+                }
+
+                // Load emails
+                const emailResponse = await fetch('/api/email');
+                if (emailResponse.ok) {
+                    systemState.emails = await emailResponse.json();
+                }
+
+                // Load WhatsApp contacts
+                const whatsappResponse = await fetch('/api/whatsapp/contacts');
+                if (whatsappResponse.ok) {
+                    systemState.whatsappContacts = await whatsappResponse.json();
+                }
+
+                // Load social stats
+                const socialResponse = await fetch('/api/social/stats');
+                if (socialResponse.ok) {
+                    systemState.socialStats = await socialResponse.json();
+                }
+
+                // Load approvals
+                const approvalsResponse = await fetch('/api/approvals');
+                if (approvalsResponse.ok) {
+                    systemState.approvals = await approvalsResponse.json();
+                }
+
+                updateDashboard();
+            } catch (error) {
+                console.warn('Could not load initial data from API:', error);
+                // Fallback to simulated data
+                simulateInitialData();
+                updateDashboard();
+            }
+        }
+
+        // Simulate initial data if API is not available
+        function simulateInitialData() {
+            systemState.recentActivity = [
+                {
+                    id: Date.now(),
+                    type: 'email',
+                    description: 'Email processed successfully',
+                    timestamp: new Date().toISOString(),
+                    status: 'completed'
+                },
+                {
+                    id: Date.now() - 1000,
+                    type: 'whatsapp',
+                    description: 'WhatsApp message received',
+                    timestamp: new Date(Date.now() - 1000).toISOString(),
+                    status: 'completed'
+                },
+                {
+                    id: Date.now() - 2000,
+                    type: 'approval',
+                    description: 'New approval request created',
+                    timestamp: new Date(Date.now() - 2000).toISOString(),
+                    status: 'pending'
+                }
+            ];
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Navigation
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = this.getAttribute('data-page');
+                    setActivePage(page);
+                });
+            });
+
+            // Theme toggle
+            themeToggle.addEventListener('click', toggleTheme);
+
+            // Refresh button
+            refreshBtn.addEventListener('click', loadInitialData);
+
+            // Quick commands
+            document.querySelectorAll('[data-command]').forEach(button => {
+                button.addEventListener('click', function() {
+                    const command = this.getAttribute('data-command');
+                    executeCommand(command);
+                });
+            });
+
+            // Manual command execution
+            document.getElementById('executeCommand').addEventListener('click', function() {
+                const command = document.getElementById('manualCommand').value.trim();
+                if (command) {
+                    executeCommand(command);
+                    document.getElementById('manualCommand').value = '';
+                }
+            });
+
+            // Schedule social post
+            document.getElementById('schedulePost').addEventListener('click', function() {
+                const content = document.getElementById('socialPostContent').value.trim();
+                if (content) {
+                    scheduleSocialPost(content);
+                }
+            });
+
+            // Save settings
+            document.getElementById('saveSettings').addEventListener('click', saveSettings);
+
+            // Log level filter
+            document.getElementById('logLevelFilter').addEventListener('change', function() {
+                if (document.getElementById('logs').classList.contains('active')) {
+                    renderLogEntries();
+                }
+            });
+
+            // Download logs button
+            document.getElementById('downloadLogs').addEventListener('click', downloadLogs);
+
+            // Command history selection
+            document.getElementById('commandHistory').addEventListener('change', function() {
+                const selectedCommand = this.value;
+                if (selectedCommand) {
+                    document.getElementById('manualCommand').value = selectedCommand;
+                    this.value = ''; // Reset selection
+                }
+            });
+
+            // Clear command history
+            document.getElementById('clearCommandHistory').addEventListener('click', function() {
+                commandHistory = [];
+                document.getElementById('commandHistory').innerHTML = '<option value="">Select a previous command...</option>';
+                addNotification('Command history cleared', 'info');
+            });
+        }
+
+        // Download logs as file
+        async function downloadLogs() {
+            try {
+                const response = await fetch('/api/logs?limit=1000');
+                if (response.ok) {
+                    const logs = await response.json();
+                    const logText = logs.map(log =>
+                        `[${log.timestamp}] [${log.level}] [${log.source}] ${log.message}`
+                    ).join('\n');
+
+                    const blob = new Blob([logText], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `system_logs_${new Date().toISOString().split('T')[0]}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                }
+            } catch (error) {
+                console.error('Error downloading logs:', error);
+                alert('Error downloading logs: ' + error.message);
+            }
+        }
+
+        // Set active page
+        function setActivePage(pageName) {
+            // Update navigation
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-page') === pageName) {
+                    link.classList.add('active');
+                }
+            });
+
+            // Show active page
+            pageSections.forEach(section => {
+                section.classList.remove('active');
+                if (section.id === pageName) {
+                    section.classList.add('active');
+                }
+            });
+
+            // Special handling for pages that need data loading
+            switch(pageName) {
+                case 'email':
+                    renderEmailList();
+                    break;
+                case 'whatsapp':
+                    renderWhatsappContacts();
+                    break;
+                case 'social':
+                    renderSocialStats();
+                    renderRecentPosts();
+                    break;
+                case 'approvals':
+                    renderApprovals();
+                    break;
+                case 'logs':
+                    renderLogEntries();
+                    break;
+            }
+        }
+
+        // Update dashboard with current data
+        function updateDashboard() {
+            // Update stat cards
+            document.getElementById('filesProcessed').textContent = systemState.filesProcessed;
+            document.getElementById('emailsSent').textContent = systemState.emailsSent;
+            document.getElementById('pendingApprovals').textContent = systemState.pendingApprovals;
+            document.getElementById('systemHealth').textContent = systemState.systemHealth + '%';
+
+            // Update pipeline
+            renderPipeline();
+
+            // Update recent activity
+            renderRecentActivity();
+
+            // Update charts
+            updateSystemChart();
+        }
+
+        // Render file processing pipeline
+        function renderPipeline() {
+            const container = document.getElementById('pipelineContainer');
+            container.innerHTML = '';
+
+            const stages = [
+                { key: 'inbox', label: 'Inbox', color: '#3498db' },
+                { key: 'needsAction', label: 'Needs Action', color: '#f39c12' },
+                { key: 'pendingApproval', label: 'Pending Approval', color: '#e67e22' },
+                { key: 'approved', label: 'Approved', color: '#27ae60' },
+                { key: 'done', label: 'Done', color: '#9b59b6' }
+            ];
+
+            stages.forEach(stage => {
+                const column = document.createElement('div');
+                column.className = 'pipeline-column';
+                column.innerHTML = `
+                    <h6>${stage.label}</h6>
+                    <div class="text-center mb-2">
+                        <span class="badge bg-primary">${systemState.filePipeline[stage.key]}</span>
+                    </div>
+                    <div class="small text-muted">
+                        ${getRandomFiles(stage.key)}
+                    </div>
+                `;
+                container.appendChild(column);
+            });
+        }
+
+        // Generate random file names for demo
+        function getRandomFiles(stage) {
+            const prefixes = {
+                inbox: ['incoming_', 'new_', 'received_'],
+                needsAction: ['action_', 'todo_', 'urgent_'],
+                pendingApproval: ['approval_', 'review_', 'pending_'],
+                approved: ['approved_', 'confirmed_', 'ready_'],
+                done: ['completed_', 'done_', 'finished_']
+            };
+
+            const types = ['.md', '.txt', '.pdf', '.doc'];
+            const files = [];
+
+            for (let i = 0; i < Math.min(systemState.filePipeline[stage], 5); i++) {
+                const prefix = prefixes[stage][Math.floor(Math.random() * prefixes[stage].length)];
+                const type = types[Math.floor(Math.random() * types.length)];
+                files.push(`${prefix}${Date.now()}-${i}${type}`);
+            }
+
+            return files.map(f => `<div class="small mb-1">${f}</div>`).join('');
+        }
+
+        // Render recent activity
+        function renderRecentActivity() {
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = systemState.recentActivity.slice(0, 10).map(activity => `
+                <div class="activity-item">
+                    <div class="d-flex justify-content-between">
+                        <strong>${activity.description}</strong>
+                        <span class="badge bg-${getStatusBadgeClass(activity.status)}">${activity.status}</span>
+                    </div>
+                    <small class="text-muted">${formatDateTime(activity.timestamp)}</small>
+                    <small class="text-muted float-end">${getActivityIcon(activity.type)}</small>
+                </div>
+            `).join('');
+        }
+
+        // Get badge class based on status
+        function getStatusBadgeClass(status) {
+            switch(status) {
+                case 'completed': return 'success';
+                case 'pending': return 'warning';
+                case 'failed': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        // Get icon based on activity type
+        function getActivityIcon(type) {
+            switch(type) {
+                case 'email': return '<i class="fas fa-envelope text-primary"></i>';
+                case 'whatsapp': return '<i class="fab fa-whatsapp text-success"></i>';
+                case 'approval': return '<i class="fas fa-check-circle text-warning"></i>';
+                case 'file_process': return '<i class="fas fa-file text-info"></i>';
+                case 'command': return '<i class="fas fa-terminal text-secondary"></i>';
+                default: return '<i class="fas fa-info-circle text-muted"></i>';
+            }
+        }
+
+        // Format date time for display
+        function formatDateTime(dateString) {
+            return new Date(dateString).toLocaleString();
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            const ctx = document.getElementById('systemChart').getContext('2d');
+            window.systemChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Now', '1m ago', '2m ago', '3m ago', '4m ago', '5m ago'],
+                    datasets: [{
+                        label: 'System Health',
+                        data: [98, 97, 99, 96, 98, 95],
+                        borderColor: '#27ae60',
+                        backgroundColor: 'rgba(39, 174, 96, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update system chart
+        function updateSystemChart() {
+            if (window.systemChart) {
+                // Add new data point and remove oldest
+                const newData = [...window.systemChart.data.datasets[0].data];
+                newData.pop();
+                newData.unshift(systemState.systemHealth);
+                window.systemChart.data.datasets[0].data = newData;
+                window.systemChart.update();
+            }
+        }
+
+        // Render email list
+        function renderEmailList() {
+            const container = document.getElementById('emailList');
+            container.innerHTML = systemState.emails.map(email => `
+                <a href="#" class="list-group-item list-group-item-action email-item" data-email-id="${email.id}">
+                    <div class="d-flex justify-content-between">
+                        <strong>${email.subject}</strong>
+                        <span class="badge bg-${getEmailStatusClass(email.status)}">${email.status.replace('_', ' ')}</span>
+                    </div>
+                    <small class="text-muted">${email.from}</small>
+                    <small class="text-muted float-end">${formatDateTime(email.date)}</small>
+                </a>
+            `).join('');
+
+            // Add event listeners to email items
+            document.querySelectorAll('.email-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const emailId = this.getAttribute('data-email-id');
+                    showEmailDetails(emailId);
+                });
+            });
+        }
+
+        // Get email status class
+        function getEmailStatusClass(status) {
+            switch(status) {
+                case 'needs_review': return 'warning';
+                case 'processed': return 'success';
+                case 'processing': return 'info';
+                default: return 'secondary';
+            }
+        }
+
+        // Show email details
+        function showEmailDetails(emailId) {
+            const email = systemState.emails.find(e => e.id == emailId);
+            if (email) {
+                document.getElementById('emailViewer').innerHTML = `
+                    <div class="card">
+                        <div class="card-header">
+                            <h5>${email.subject}</h5>
+                            <small class="text-muted">From: ${email.from}</small>
+                        </div>
+                        <div class="card-body">
+                            <p>${email.content}</p>
+                            <hr>
+                            <small class="text-muted">Received: ${formatDateTime(email.date)}</small>
+                            <div class="mt-3">
+                                <button class="btn btn-primary btn-sm me-2">
+                                    <i class="fas fa-reply me-1"></i>Reply
+                                </button>
+                                <button class="btn btn-success btn-sm me-2">
+                                    <i class="fas fa-check me-1"></i>Process
+                                </button>
+                                <button class="btn btn-warning btn-sm">
+                                    <i class="fas fa-clock me-1"></i>Defer
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Render WhatsApp contacts
+        function renderWhatsappContacts() {
+            const container = document.getElementById('whatsappContacts');
+            container.innerHTML = systemState.whatsappContacts.map(contact => `
+                <a href="#" class="list-group-item list-group-item-action whatsapp-contact" data-contact-id="${contact.id}">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-circle fa-lg text-${contact.status === 'online' ? 'success' : 'secondary'}"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <div class="d-flex justify-content-between">
+                                <strong>${contact.name}</strong>
+                                <span class="badge bg-${contact.status === 'online' ? 'success' : 'secondary'}">${contact.status}</span>
+                            </div>
+                            <small class="text-muted">${contact.phone}</small>
+                        </div>
+                    </div>
+                </a>
+            `).join('');
+
+            // Add event listeners to contacts
+            document.querySelectorAll('.whatsapp-contact').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const contactId = this.getAttribute('data-contact-id');
+                    loadWhatsappChat(contactId);
+                });
+            });
+        }
+
+        // Load WhatsApp chat
+        function loadWhatsappChat(contactId) {
+            // For demo, we'll use mock messages
+            const messages = [
+                { id: 1, contactId: contactId, message: 'Hello! How can I help you?', timestamp: new Date(Date.now() - 300000).toISOString(), sender: 'me', read: true },
+                { id: 2, contactId: contactId, message: 'Hi there! I have a question about your services.', timestamp: new Date(Date.now() - 240000).toISOString(), sender: 'contact', read: true },
+                { id: 3, contactId: contactId, message: 'Sure, what would you like to know?', timestamp: new Date(Date.now() - 180000).toISOString(), sender: 'me', read: true }
+            ];
+
+            renderWhatsappMessages(messages);
+
+            // Set up send message functionality
+            document.getElementById('sendWhatsappMessage').onclick = function() {
+                const messageInput = document.getElementById('whatsappMessage');
+                const message = messageInput.value.trim();
+                if (message) {
+                    // Add to messages array
+                    const newMessage = {
+                        id: Date.now(),
+                        contactId: contactId,
+                        message: message,
+                        timestamp: new Date().toISOString(),
+                        sender: 'me',
+                        read: false
+                    };
+                    messages.push(newMessage);
+                    renderWhatsappMessages(messages);
+                    messageInput.value = '';
+
+                    // Simulate reply after delay
+                    setTimeout(() => {
+                        const reply = {
+                            id: Date.now() + 1,
+                            contactId: contactId,
+                            message: 'Thanks for your message. We\'ll get back to you soon.',
+                            timestamp: new Date().toISOString(),
+                            sender: 'contact',
+                            read: true
+                        };
+                        messages.push(reply);
+                        renderWhatsappMessages(messages);
+                    }, 2000);
+                }
+            };
+        }
+
+        // Render WhatsApp messages
+        function renderWhatsappMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = messages.map(msg => `
+                <div class="message ${msg.sender === 'me' ? 'sent' : 'received'}">
+                    <div>${msg.message}</div>
+                    <small class="text-muted float-end">${formatDateTime(msg.timestamp)}</small>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Render social stats
+        function renderSocialStats() {
+            document.getElementById('linkedinStats').textContent = `${systemState.socialStats.linkedin?.posts || 0} posts`;
+            document.getElementById('twitterStats').textContent = `${systemState.socialStats.twitter?.tweets || 0} tweets`;
+            document.getElementById('instagramStats').textContent = `${systemState.socialStats.instagram?.posts || 0} posts`;
+            document.getElementById('totalEngagement').textContent = `${(systemState.socialStats.linkedin?.engagements || 0) + (systemState.socialStats.twitter?.retweets || 0) + (systemState.socialStats.instagram?.likes || 0)}`;
+        }
+
+        // Render recent posts
+        function renderRecentPosts() {
+            const container = document.getElementById('recentPosts');
+            // For demo, we'll create some mock posts
+            const posts = [
+                { platform: 'LinkedIn', content: 'Just launched our new AI-powered automation tools!', date: new Date(Date.now() - 86400000).toISOString() },
+                { platform: 'Twitter', content: 'Excited to share our latest product updates! #AI #Automation', date: new Date(Date.now() - 172800000).toISOString() },
+                { platform: 'Instagram', content: 'Behind the scenes at our AI development lab', date: new Date(Date.now() - 259200000).toISOString() }
+            ];
+
+            container.innerHTML = posts.map(post => `
+                <div class="social-post">
+                    <div class="d-flex justify-content-between mb-2">
+                        <strong>${post.platform}</strong>
+                        <small class="text-muted">${formatDateTime(post.date)}</small>
+                    </div>
+                    <p>${post.content}</p>
+                    <div class="d-flex">
+                        <span class="me-3"><i class="fas fa-heart text-danger me-1"></i> 24</span>
+                        <span class="me-3"><i class="fas fa-comment text-primary me-1"></i> 5</span>
+                        <span><i class="fas fa-share text-info me-1"></i> 3</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Schedule social post
+        function scheduleSocialPost(content) {
+            const linkedIn = document.getElementById('postToLinkedIn').checked;
+            const twitter = document.getElementById('postToTwitter').checked;
+            const instagram = document.getElementById('postToInstagram').checked;
+
+            alert(`Scheduled post: "${content}"\nPlatforms: ${linkedIn ? 'LinkedIn ' : ''}${twitter ? 'Twitter ' : ''}${instagram ? 'Instagram' : ''}`);
+
+            // Reset form
+            document.getElementById('socialPostContent').value = '';
+            document.getElementById('postToLinkedIn').checked = false;
+            document.getElementById('postToTwitter').checked = false;
+            document.getElementById('postToInstagram').checked = false;
+        }
+
+        // Render approvals
+        function renderApprovals() {
+            const container = document.getElementById('approvalsTable');
+            container.innerHTML = systemState.approvals.map(approval => `
+                <tr>
+                    <td>${approval.id}</td>
+                    <td>${approval.request}</td>
+                    <td>$${approval.amount}</td>
+                    <td>${approval.requestedBy}</td>
+                    <td>${formatDateTime(approval.date)}</td>
+                    <td><span class="badge bg-${approval.status === 'approved' ? 'success' : 'warning'}">${approval.status}</span></td>
+                    <td>
+                        <button class="btn btn-sm btn-success me-1" onclick="approveRequest(${approval.id})">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="rejectRequest(${approval.id})">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Approve request
+        function approveRequest(id) {
+            alert(`Approved request ${id}`);
+            // Update local state
+            const approval = systemState.approvals.find(a => a.id == id);
+            if (approval) {
+                approval.status = 'approved';
+                renderApprovals();
+            }
+        }
+
+        // Reject request
+        function rejectRequest(id) {
+            alert(`Rejected request ${id}`);
+            // Update local state
+            const approval = systemState.approvals.find(a => a.id == id);
+            if (approval) {
+                approval.status = 'rejected';
+                renderApprovals();
+            }
+        }
+
+        // Render log entries
+        async function renderLogEntries() {
+            try {
+                const logLevelFilter = document.getElementById('logLevelFilter').value;
+                const response = await fetch(`/api/logs?level=${logLevelFilter}&limit=100`);
+
+                if (response.ok) {
+                    const logs = await response.json();
+                    const container = document.getElementById('logEntries');
+
+                    container.innerHTML = logs.map(log => `
+                        <div class="log-entry">
+                            <span class="text-muted">${formatDateTime(log.timestamp)}</span>
+                            <span class="badge bg-${getLogLevelClass(log.level)} ms-2">${log.level}</span>
+                            <span class="ms-2">${log.message}</span>
+                            <small class="text-muted ms-2">[${log.source}]</small>
+                        </div>
+                    `).join('');
+                } else {
+                    throw new Error('Failed to load logs');
+                }
+            } catch (error) {
+                console.error('Error loading logs:', error);
+                const container = document.getElementById('logEntries');
+                container.innerHTML = `<div class="log-entry text-danger">Error loading logs: ${error.message}</div>`;
+            }
+        }
+
+        // Get log level class
+        function getLogLevelClass(level) {
+            switch(level.toUpperCase()) {
+                case 'ERROR': return 'danger';
+                case 'WARNING': return 'warning';
+                case 'INFO': return 'info';
+                default: return 'secondary';
+            }
+        }
+
+        // Command history storage
+        let commandHistory = [];
+
+        // Execute command
+        async function executeCommand(command) {
+            const outputDiv = document.getElementById('commandOutput');
+
+            // Add command to history
+            commandHistory.push({
+                command: command,
+                timestamp: new Date().toISOString()
+            });
+
+            // Limit history to 100 commands
+            if (commandHistory.length > 100) {
+                commandHistory = commandHistory.slice(-100);
+            }
+
+            outputDiv.innerHTML += `<div class="mb-1"><span class="text-primary">$ ${command}</span></div>`;
+
+            try {
+                const startTime = Date.now();
+                outputDiv.innerHTML += `<div class="text-muted mb-2">Executing command...</div>`;
+
+                const response = await fetch('/api/command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ command })
+                });
+
+                const result = await response.json();
+                const executionTime = Date.now() - startTime;
+
+                if (response.ok) {
+                    outputDiv.innerHTML += `<div class="text-success mb-2"><pre>${JSON.stringify(result.result, null, 2)}</pre></div>`;
+                    outputDiv.innerHTML += `<div class="text-muted mb-3">Command completed in ${executionTime}ms</div>`;
+
+                    // Add success notification
+                    addNotification(`Command '${command}' executed successfully`, 'success');
+                } else {
+                    outputDiv.innerHTML += `<div class="text-danger mb-2">Error: ${result.error}</div>`;
+                    addNotification(`Command '${command}' failed: ${result.error}`, 'danger');
+                }
+            } catch (error) {
+                outputDiv.innerHTML += `<div class="text-danger mb-2">Network error: ${error.message}</div>`;
+                addNotification(`Network error executing command: ${error.message}`, 'danger');
+            }
+
+            outputDiv.scrollTop = outputDiv.scrollHeight;
+        }
+
+        // Add command to history dropdown
+        function updateCommandHistory() {
+            const historyDropdown = document.getElementById('commandHistory');
+            if (!historyDropdown) return;
+
+            historyDropdown.innerHTML = '';
+            const recentCommands = commandHistory.slice(-10).reverse();
+
+            recentCommands.forEach(item => {
+                const option = document.createElement('option');
+                option.value = item.command;
+                historyDropdown.appendChild(option);
+            });
+        }
+
+        // Toggle theme
+        function toggleTheme() {
+            document.body.classList.toggle('dark-theme');
+            const icon = themeToggle.querySelector('i');
+            if (document.body.classList.contains('dark-theme')) {
+                icon.className = 'fas fa-sun';
+            } else {
+                icon.className = 'fas fa-moon';
+            }
+        }
+
+        // Save settings
+        async function saveSettings() {
+            const settings = {
+                theme: document.getElementById('themeSelector').value,
+                layout: document.getElementById('layoutSelector').value,
+                realTimeUpdates: document.getElementById('realTimeUpdates').checked,
+                notifications: {
+                    email: document.getElementById('emailNotifications').checked,
+                    whatsapp: document.getElementById('whatsappNotifications').checked,
+                    social: document.getElementById('socialNotifications').checked,
+                    system: document.getElementById('systemNotifications').checked
+                },
+                integrations: {
+                    emailService: document.getElementById('emailService').value,
+                    whatsappApi: document.getElementById('whatsappApi').value,
+                    socialMediaApis: document.getElementById('socialMediaApis').value
+                },
+                security: {
+                    sessionTimeout: parseInt(document.getElementById('sessionTimeout').value),
+                    twoFactorAuth: document.getElementById('twoFactorAuth').checked
+                }
+            };
+
+            try {
+                // In a real application, you would save to the server
+                localStorage.setItem('dashboardSettings', JSON.stringify(settings));
+
+                applySettings(settings);
+                addNotification('Settings saved successfully!', 'success');
+            } catch (error) {
+                console.error('Error saving settings:', error);
+                addNotification('Error saving settings: ' + error.message, 'danger');
+            }
+        }
+
+        // Apply settings to the dashboard
+        function applySettings(settings) {
+            // Apply theme
+            applyTheme(settings.theme);
+
+            // Apply layout
+            applyLayout(settings.layout);
+
+            // Enable/disable real-time updates
+            if (!settings.realTimeUpdates) {
+                // Stop periodic updates if disabled
+                clearInterval(window.updateInterval);
+            } else {
+                // Restart periodic updates if enabled
+                if (!window.updateInterval) {
+                    window.updateInterval = setInterval(updateDashboard, 5000);
+                }
+            }
+
+            // Store notification preferences
+            window.notificationPrefs = settings.notifications;
+        }
+
+        // Apply theme
+        function applyTheme(theme) {
+            document.body.classList.remove('light-theme', 'dark-theme');
+
+            if (theme === 'dark') {
+                document.body.classList.add('dark-theme');
+                themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+            } else if (theme === 'light') {
+                document.body.classList.add('light-theme');
+                themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            } else { // auto
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                if (prefersDark) {
+                    document.body.classList.add('dark-theme');
+                    themeToggle.innerHTML = '<i class="fas fa-sun"></i>';
+                } else {
+                    document.body.classList.add('light-theme');
+                    themeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+                }
+            }
+        }
+
+        // Apply layout
+        function applyLayout(layout) {
+            // Remove existing layout classes
+            document.body.classList.remove('layout-compact', 'layout-spacious', 'layout-minimal');
+
+            // Add new layout class
+            if (layout) {
+                document.body.classList.add(`layout-${layout}`);
+            }
+        }
+
+        // Load saved settings
+        function loadSavedSettings() {
+            try {
+                const savedSettings = localStorage.getItem('dashboardSettings');
+                if (savedSettings) {
+                    const settings = JSON.parse(savedSettings);
+
+                    // Populate form fields
+                    document.getElementById('themeSelector').value = settings.theme || 'light';
+                    document.getElementById('layoutSelector').value = settings.layout || 'spacious';
+                    document.getElementById('realTimeUpdates').checked = settings.realTimeUpdates !== false;
+
+                    // Notification settings
+                    document.getElementById('emailNotifications').checked = settings.notifications?.email !== false;
+                    document.getElementById('whatsappNotifications').checked = settings.notifications?.whatsapp !== false;
+                    document.getElementById('socialNotifications').checked = settings.notifications?.social !== false;
+                    document.getElementById('systemNotifications').checked = settings.notifications?.system !== false;
+
+                    // Integration settings
+                    document.getElementById('emailService').value = settings.integrations?.emailService || 'gmail';
+                    document.getElementById('whatsappApi').value = settings.integrations?.whatsappApi || '';
+                    document.getElementById('socialMediaApis').value = settings.integrations?.socialMediaApis || '';
+
+                    // Security settings
+                    document.getElementById('sessionTimeout').value = settings.security?.sessionTimeout || 30;
+                    document.getElementById('twoFactorAuth').checked = settings.security?.twoFactorAuth || false;
+
+                    // Apply the loaded settings
+                    applySettings(settings);
+                } else {
+                    // Apply default settings
+                    applySettings({
+                        theme: 'light',
+                        layout: 'spacious',
+                        realTimeUpdates: true,
+                        notifications: {
+                            email: true,
+                            whatsapp: true,
+                            social: true,
+                            system: true
+                        },
+                        integrations: {
+                            emailService: 'gmail',
+                            whatsappApi: '',
+                            socialMediaApis: ''
+                        },
+                        security: {
+                            sessionTimeout: 30,
+                            twoFactorAuth: false
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+
+        // Toggle theme function (updated to work with settings)
+        function toggleTheme() {
+            const currentTheme = document.getElementById('themeSelector').value;
+            let newTheme;
+
+            if (currentTheme === 'light') {
+                newTheme = 'dark';
+            } else if (currentTheme === 'dark') {
+                newTheme = 'light';
+            } else {
+                // If auto, toggle between light/dark
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                newTheme = prefersDark ? 'light' : 'dark';
+            }
+
+            document.getElementById('themeSelector').value = newTheme;
+            applyTheme(newTheme);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "servers": [
+    {
+      "name": "odoo",
+      "command": "python",
+      "args": ["C:/Users/LENOVO X1 YOGA/OneDrive/Desktop/hakathone zero/AI_Employee_vault/odoo_mcp/server.py"],
+      "env": {
+        "ODOO_URL": "http://localhost:8069",
+        "ODOO_DB": "odoo_db",
+        "ODOO_USERNAME": "admin",
+        "ODOO_PASSWORD": "password"
+      }
+    }
+  ]
+}
